@@ -1,8 +1,14 @@
 package com.programmers.engine;
 
 import java.util.Stack;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class PostfixCalculator {
+
+    StringBuilder postFix = new StringBuilder();
 
     //OOP를 잘 지킨걸까?
     public double calculate(String postfix) {
@@ -38,65 +44,71 @@ public class PostfixCalculator {
         return stack.pop();
     }
 
+
     // 메서드를 분리해야 하는지?
     public double infixToPostfix(String infix) {
         char cur = ' ';
         Stack<Character> opStack = new Stack<>();
-        StringBuilder postFix = new StringBuilder();
 
         for (int i = 0; i < infix.length(); i++) {
             cur = infix.charAt(i);
 
-            if (opStack.isEmpty() && !Character.isDigit(cur)) {
+            if (Character.isDigit(cur)) {
+                postFix.append(cur);
+            } else if (opStack.isEmpty()) {
                 opStack.push(cur);
-            } else if (!opStack.isEmpty() && !Character.isDigit(cur)) {
+            } else {
                 if (cur == '(') {
                     opStack.push(cur);
                     continue;
-                } else if (cur == ')') {
-                    char stackOperator = ' ';
-                    while (true) {
-                        stackOperator = opStack.pop();
-                        if (stackOperator == '(') {
-                            break;
-                        }else {
-                            postFix.append(stackOperator);
+                }
+
+                if (cur == ')') {
+                    boolean flag = true;
+                    while (flag) {
+                        if (!test(opStack, (Character c) -> c == '(', opStack.pop())) {
+                            flag = false;
                         }
                     }
                     continue;
                 }
 
-                // 연산 우선순위가 높기 때문에 바로 추가
-                if (compareOperator(opStack.peek(), cur) > 0) {
+                if (compareOperator(opStack.peek(), cur ) > 0) {
+                    opStack.push(cur);
+                } else {
+                    test(opStack, (Integer data) -> data > 0, compareOperator(opStack.peek(), cur)); // peek으로 확인 후 검사
                     opStack.push(cur);
                 }
-                else{
-                    while (!opStack.isEmpty()) {
-                        if (compareOperator(opStack.peek(), cur) <= 0) {
-                            postFix.append(opStack.pop());
-                        } else {
-                            break;
-                        }
-                    }
-                    // 위에서 우선순위가 낮은 연산자를 다 빼낸 후 추가
-                    opStack.push(cur);
-                }
-            }
-            // 숫자 추가
-            else {
-                postFix.append(cur);
             }
         }
+        if (!opStack.isEmpty()) stackPop(opStack, postFix, ' ');
 
-        char stackOperator = ' ';
-        while (!opStack.isEmpty()) {
-            stackOperator = opStack.pop();
-            if (stackOperator != '(') {
-                postFix.append(stackOperator);
-            }
-        }
         return calculate(postFix.toString());
     }
+
+    public void stackPop(Stack<Character> opStack, StringBuilder postFix, char oper) {
+        while (!opStack.isEmpty()) {
+            oper = opStack.pop();
+            if (oper == '(') return;
+            postFix.append(oper);
+        }
+    }
+
+    public <T> boolean test(Stack<Character> opStack, Predicate<T> predicate, T data) {
+        while (!opStack.isEmpty()) { //람다
+
+            if (predicate.test(data)) {
+                return false;
+            }
+            if (data instanceof Character) {
+                postFix.append(data);
+                return true;
+            }
+            postFix.append(opStack.pop());
+        }
+        return true;
+    }
+
 
     public int getPriority(char op) {
         switch (op) {

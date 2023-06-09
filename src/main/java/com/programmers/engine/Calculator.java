@@ -15,15 +15,14 @@ public class Calculator {
     public Calculator() {
         this.console = new Console();
         this.postfixCalculator = new PostfixCalculator();
-        this.validator = new Validator();
         this.calculatorHistory = new CalculatorHistory();
     }
 
 
     // 사용자 요청에 응답하기
     public void response(String request) {
-
-        if (request.equals("1")) {
+        // null 처리 위해서
+        if ("1".equals(request)) {
             //저장된 값 조회
             console.printHistory(calculatorHistory.findAll());
 
@@ -31,7 +30,7 @@ public class Calculator {
             // 연산
             String formula = console.input();
 
-            if (validator.checkFormula(formula)) {
+            if (Validator.checkFormula(formula)) {
                 double answer = postfixCalculator.infixToPostfix(formula);
                 console.printResult(answer);
                 calculatorHistory.save(formula, answer);
